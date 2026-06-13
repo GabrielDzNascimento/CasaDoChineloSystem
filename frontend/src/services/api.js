@@ -1,4 +1,4 @@
-const BASE_URL = 'http://localhost:3001';
+const BASE_URL = 'https://casadochinelosystem.onrender.com';
 
 export const api = {
   login: (email, senha) =>
