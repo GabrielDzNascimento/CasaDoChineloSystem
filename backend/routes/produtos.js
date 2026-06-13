@@ -18,50 +18,44 @@ router.get('/', (req, res) => {
   }
   if (valorMin) { query += ` AND valor >= ?`; params.push(parseFloat(String(valorMin).replace(',', '.'))); }
   if (valorMax) { query += ` AND valor <= ?`; params.push(parseFloat(String(valorMax).replace(',', '.'))); }
-
   query += ` ORDER BY nome`;
 
-  try {
-    const rows = db.prepare(query).all(params);
+  db.all(query, params, (err, rows) => {
+    if (err) return res.status(500).json({ erro: 'Erro ao buscar produtos.' });
     res.json(rows);
-  } catch (err) {
-    res.status(500).json({ erro: 'Erro ao buscar produtos.' });
-  }
+  });
 });
 
 router.get('/:id', (req, res) => {
-  try {
-    const row = db.prepare(`SELECT * FROM produtos WHERE id = ?`).get(req.params.id);
-    if (!row) return res.status(404).json({ erro: 'Produto não encontrado.' });
+  db.get(`SELECT * FROM produtos WHERE id = ?`, [req.params.id], (err, row) => {
+    if (err || !row) return res.status(404).json({ erro: 'Produto não encontrado.' });
     res.json(row);
-  } catch (err) {
-    res.status(500).json({ erro: 'Erro ao buscar produto.' });
-  }
+  });
 });
 
 router.post('/cadastrar', (req, res) => {
   const { nome, cor, tamanho, valor, quantidade, codigo_barras } = req.body;
   const codigo = codigo_barras || `CC${Date.now()}`;
-  try {
-    const result = db.prepare(
-      `INSERT INTO produtos (nome, cor, tamanho, valor, quantidade, codigo_barras) VALUES (?, ?, ?, ?, ?, ?)`
-    ).run(nome, cor, tamanho, valor, quantidade, codigo);
-    res.json({ mensagem: 'Produto cadastrado com sucesso!', id: result.lastInsertRowid, codigo_barras: codigo });
-  } catch (err) {
-    res.status(400).json({ erro: 'Erro ao cadastrar produto.' });
-  }
+  db.run(
+    `INSERT INTO produtos (nome, cor, tamanho, valor, quantidade, codigo_barras) VALUES (?, ?, ?, ?, ?, ?)`,
+    [nome, cor, tamanho, valor, quantidade, codigo],
+    function (err) {
+      if (err) return res.status(400).json({ erro: 'Erro ao cadastrar produto.' });
+      res.json({ mensagem: 'Produto cadastrado com sucesso!', id: this.lastID, codigo_barras: codigo });
+    }
+  );
 });
 
 router.put('/:id', (req, res) => {
   const { nome, cor, tamanho, valor, quantidade, codigo_barras } = req.body;
-  try {
-    db.prepare(
-      `UPDATE produtos SET nome=?, cor=?, tamanho=?, valor=?, quantidade=?, codigo_barras=? WHERE id=?`
-    ).run(nome, cor, tamanho, valor, quantidade, codigo_barras, req.params.id);
-    res.json({ mensagem: 'Produto atualizado com sucesso!' });
-  } catch (err) {
-    res.status(500).json({ erro: 'Erro ao editar produto.' });
-  }
+  db.run(
+    `UPDATE produtos SET nome=?, cor=?, tamanho=?, valor=?, quantidade=?, codigo_barras=? WHERE id=?`,
+    [nome, cor, tamanho, valor, quantidade, codigo_barras, req.params.id],
+    function (err) {
+      if (err) return res.status(500).json({ erro: 'Erro ao editar produto.' });
+      res.json({ mensagem: 'Produto atualizado com sucesso!' });
+    }
+  );
 });
 
 module.exports = router;
