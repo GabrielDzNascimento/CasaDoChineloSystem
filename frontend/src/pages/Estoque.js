@@ -1,7 +1,8 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { api } from '../services/api';
-
+import Layout from '../components/Layout';
+ 
 function Estoque() {
   const [produtos, setProdutos] = useState([]);
   const [filtros, setFiltros] = useState({
@@ -9,115 +10,100 @@ function Estoque() {
     valorExato: '', valorMin: '', valorMax: ''
   });
   const [modoValor, setModoValor] = useState('faixa');
+  const [buscado, setBuscado] = useState(false);
   const navigate = useNavigate();
   const usuario = JSON.parse(localStorage.getItem('usuario'));
   const isAnalista = usuario?.perfil === 'Analista';
-
-const buscar = async () => {
-  const params = {};
-  if (filtros.nome) params.nome = filtros.nome;
-  if (filtros.cor) params.cor = filtros.cor;
-  if (filtros.codigo_barras) params.codigo_barras = filtros.codigo_barras;
-  if (filtros.tamanho) params.tamanho = filtros.tamanho;
-
-  if (modoValor === 'exato' && filtros.valorExato) {
-    params.valorExato = filtros.valorExato;
-  } else if (modoValor === 'acima' && filtros.valorMin) {
-    params.valorMin = filtros.valorMin;
-  } else if (modoValor === 'ate' && filtros.valorMax) {
-    params.valorMax = filtros.valorMax;
-  } else if (modoValor === 'faixa') {
-    if (filtros.valorMin) params.valorMin = filtros.valorMin;
-    if (filtros.valorMax) params.valorMax = filtros.valorMax;
-  }
-
-  const resultado = await api.listarProdutos(params);
-  setProdutos(resultado);
-};
-
+ 
+  const buscar = async () => {
+    const params = {};
+    if (filtros.nome) params.nome = filtros.nome;
+    if (filtros.cor) params.cor = filtros.cor;
+    if (filtros.codigo_barras) params.codigo_barras = filtros.codigo_barras;
+    if (filtros.tamanho) params.tamanho = filtros.tamanho;
+ 
+    if (modoValor === 'exato' && filtros.valorExato) params.valorExato = filtros.valorExato;
+    else if (modoValor === 'acima' && filtros.valorMin) params.valorMin = filtros.valorMin;
+    else if (modoValor === 'ate' && filtros.valorMax) params.valorMax = filtros.valorMax;
+    else if (modoValor === 'faixa') {
+      if (filtros.valorMin) params.valorMin = filtros.valorMin;
+      if (filtros.valorMax) params.valorMax = filtros.valorMax;
+    }
+ 
+    const resultado = await api.listarProdutos(params);
+    setProdutos(resultado);
+    setBuscado(true);
+  };
+ 
   const limpar = () => {
     setFiltros({ nome: '', cor: '', codigo_barras: '', tamanho: '', valorExato: '', valorMin: '', valorMax: '' });
     setModoValor('faixa');
+    setBuscado(false);
     api.listarProdutos().then(setProdutos);
   };
-
+ 
   useEffect(() => { buscar(); }, []);
-
+ 
   const renderFiltroValor = () => {
     switch (modoValor) {
       case 'exato':
         return <input style={styles.input} type="text" placeholder="Ex: 29,90"
-          value={filtros.valorExato}
-          onChange={e => setFiltros({ ...filtros, valorExato: e.target.value })} />;
+          value={filtros.valorExato} onChange={e => setFiltros({ ...filtros, valorExato: e.target.value })} />;
       case 'acima':
         return <input style={styles.input} type="text" placeholder="Acima de (Ex: 20,00)"
-          value={filtros.valorMin}
-          onChange={e => setFiltros({ ...filtros, valorMin: e.target.value })} />;
+          value={filtros.valorMin} onChange={e => setFiltros({ ...filtros, valorMin: e.target.value })} />;
       case 'ate':
         return <input style={styles.input} type="text" placeholder="Até (Ex: 50,00)"
-          value={filtros.valorMax}
-          onChange={e => setFiltros({ ...filtros, valorMax: e.target.value })} />;
+          value={filtros.valorMax} onChange={e => setFiltros({ ...filtros, valorMax: e.target.value })} />;
       case 'faixa':
         return (
           <div style={styles.faixa}>
             <input style={styles.inputFaixa} type="text" placeholder="De (Ex: 20,00)"
-              value={filtros.valorMin}
-              onChange={e => setFiltros({ ...filtros, valorMin: e.target.value })} />
+              value={filtros.valorMin} onChange={e => setFiltros({ ...filtros, valorMin: e.target.value })} />
             <span style={styles.ate}>até</span>
             <input style={styles.inputFaixa} type="text" placeholder="Até (Ex: 50,00)"
-              value={filtros.valorMax}
-              onChange={e => setFiltros({ ...filtros, valorMax: e.target.value })} />
+              value={filtros.valorMax} onChange={e => setFiltros({ ...filtros, valorMax: e.target.value })} />
           </div>
         );
       default: return null;
     }
   };
-
+ 
   return (
-    <div style={styles.container}>
-      <div style={styles.header}>
-        <button style={styles.voltar} onClick={() => navigate('/dashboard')}>← Voltar</button>
-        <h2 style={styles.titulo}>Consultar Estoque</h2>
-      </div>
-
+    <Layout title="Consultar Estoque" subtitle="Busque produtos por nome, cor, tamanho, código ou valor">
+      {/* Painel de filtros */}
       <div style={styles.painel}>
-        <h4 style={styles.painelTitulo}>🔍 Filtros</h4>
-
+        <div style={styles.painelHeader}>
+          <span style={styles.painelIcon}>🔍</span>
+          <span style={styles.painelTitulo}>Filtros de busca</span>
+        </div>
+ 
         <div style={styles.grid}>
-          {/* Nome */}
           <div style={styles.campo}>
             <label style={styles.label}>Nome</label>
             <input style={styles.input} placeholder="Ex: Havaianas"
-              value={filtros.nome}
-              onChange={e => setFiltros({ ...filtros, nome: e.target.value })} />
+              value={filtros.nome} onChange={e => setFiltros({ ...filtros, nome: e.target.value })} />
           </div>
-
-          {/* Cor */}
+ 
           <div style={styles.campo}>
             <label style={styles.label}>Cor</label>
             <input style={styles.input} placeholder="Ex: Azul"
-              value={filtros.cor}
-              onChange={e => setFiltros({ ...filtros, cor: e.target.value })} />
+              value={filtros.cor} onChange={e => setFiltros({ ...filtros, cor: e.target.value })} />
           </div>
-
-          {/* Código de barras */}
+ 
           <div style={styles.campo}>
             <label style={styles.label}>Código de Barras</label>
             <input style={styles.input} placeholder="Ex: 7891234567890"
-              value={filtros.codigo_barras}
-              onChange={e => setFiltros({ ...filtros, codigo_barras: e.target.value })} />
+              value={filtros.codigo_barras} onChange={e => setFiltros({ ...filtros, codigo_barras: e.target.value })} />
           </div>
-
-          {/* Tamanho — sempre texto, suporta "38" ou "33/34" */}
+ 
           <div style={styles.campo}>
             <label style={styles.label}>Tamanho</label>
             <input style={styles.input} placeholder='Ex: 38 ou 33/34'
-              value={filtros.tamanho}
-              onChange={e => setFiltros({ ...filtros, tamanho: e.target.value })} />
-            <span style={styles.dica}>💡 Digite parcial: "33" encontra "33/34"</span>
+              value={filtros.tamanho} onChange={e => setFiltros({ ...filtros, tamanho: e.target.value })} />
+            <span style={styles.dica}>Digite "33" para encontrar "33/34"</span>
           </div>
-
-          {/* Valor com modo variável */}
+ 
           <div style={{ ...styles.campo, gridColumn: 'span 2' }}>
             <label style={styles.label}>Valor (R$)</label>
             <div style={styles.toggle}>
@@ -140,41 +126,68 @@ const buscar = async () => {
             {renderFiltroValor()}
           </div>
         </div>
-
+ 
         <div style={styles.acoes}>
           <button style={styles.botao} onClick={buscar}>Buscar</button>
-          <button style={styles.botaoLimpar} onClick={limpar}>Limpar Filtros</button>
+          <button style={styles.botaoLimpar} onClick={limpar}>Limpar filtros</button>
         </div>
       </div>
-
-      {produtos.length === 0 ? (
-        <p style={styles.vazio}>Nenhum produto encontrado.</p>
-      ) : (
-        <>
-          <p style={styles.contador}>{produtos.length} produto(s) encontrado(s)</p>
+ 
+      {/* Resultado */}
+      {buscado && produtos.length === 0 && (
+        <div style={styles.empty}>
+          <div style={styles.emptyIcon}>📭</div>
+          <div style={styles.emptyTitle}>Nenhum produto encontrado</div>
+          <div style={styles.emptyDesc}>Tente ajustar os filtros de busca</div>
+        </div>
+      )}
+ 
+      {produtos.length > 0 && (
+        <div style={styles.tabelaWrap}>
+          <div style={styles.tabelaHeader}>
+            <span style={styles.contador}>{produtos.length} produto(s) encontrado(s)</span>
+            {isAnalista && (
+              <button style={styles.btnNovo} onClick={() => navigate('/cadastrar-produto')}>
+                + Novo produto
+              </button>
+            )}
+          </div>
           <table style={styles.tabela}>
             <thead>
               <tr>
                 {['Nome', 'Cor', 'Tamanho', 'Valor', 'Quantidade', 'Código de Barras',
-                  ...(isAnalista ? ['Ações'] : [])].map(col => (
-                  <th key={col} style={styles.th}>{col}</th>
+                  ...(isAnalista ? [''] : [])].map((col, i) => (
+                  <th key={i} style={styles.th}>{col}</th>
                 ))}
               </tr>
             </thead>
             <tbody>
-              {produtos.map(p => (
-                <tr key={p.id} style={styles.tr}>
-                  <td style={styles.td}>{p.nome}</td>
-                  <td style={styles.td}>{p.cor}</td>
-                  <td style={styles.td}>{p.tamanho}</td>
-                  <td style={styles.td}>R$ {Number(p.valor).toFixed(2)}</td>
-                  <td style={styles.td}>{p.quantidade}</td>
-                  <td style={styles.td}>{p.codigo_barras}</td>
+              {produtos.map((p, i) => (
+                <tr key={p.id} style={{ ...styles.tr, backgroundColor: i % 2 === 0 ? '#fff' : '#fafafa' }}>
+                  <td style={{ ...styles.td, fontWeight: 600, color: '#1a1a1a' }}>{p.nome}</td>
+                  <td style={styles.td}>
+                    <span style={styles.badge}>{p.cor || '—'}</span>
+                  </td>
+                  <td style={styles.td}>{p.tamanho || '—'}</td>
+                  <td style={{ ...styles.td, fontWeight: 600, color: '#8B0000' }}>
+                    R$ {Number(p.valor).toFixed(2)}
+                  </td>
+                  <td style={styles.td}>
+                    <span style={{
+                      ...styles.qtdBadge,
+                      backgroundColor: p.quantidade === 0 ? '#fef2f2' : p.quantidade <= 3 ? '#fffbeb' : '#f0fdf4',
+                      color: p.quantidade === 0 ? '#dc2626' : p.quantidade <= 3 ? '#d97706' : '#16a34a',
+                    }}>
+                      {p.quantidade}
+                    </span>
+                  </td>
+                  <td style={{ ...styles.td, fontFamily: 'monospace', fontSize: 12, color: '#666' }}>
+                    {p.codigo_barras}
+                  </td>
                   {isAnalista && (
                     <td style={styles.td}>
-                      <button style={styles.editBtn}
-                        onClick={() => navigate(`/editar-produto/${p.id}`)}>
-                        ✏️ Editar
+                      <button style={styles.editBtn} onClick={() => navigate(`/editar-produto/${p.id}`)}>
+                        Editar
                       </button>
                     </td>
                   )}
@@ -182,40 +195,99 @@ const buscar = async () => {
               ))}
             </tbody>
           </table>
-        </>
+        </div>
       )}
-    </div>
+    </Layout>
   );
 }
-
+ 
 const styles = {
-  container: { padding: '32px', fontFamily: 'Arial, sans-serif', backgroundColor: '#f5f5f5', minHeight: '100vh' },
-  header: { display: 'flex', alignItems: 'center', gap: '16px', marginBottom: '24px' },
-  voltar: { backgroundColor: '#8B0000', color: '#fff', border: 'none', borderRadius: '8px', padding: '8px 14px', cursor: 'pointer' },
-  titulo: { color: '#8B0000', margin: 0 },
-  painel: { backgroundColor: '#fff', borderRadius: '12px', padding: '24px', marginBottom: '24px', boxShadow: '0 2px 8px rgba(0,0,0,0.08)' },
-  painelTitulo: { color: '#8B0000', margin: '0 0 16px' },
-  grid: { display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '16px', marginBottom: '16px' },
-  campo: { display: 'flex', flexDirection: 'column', gap: '6px' },
-  label: { fontSize: '12px', fontWeight: 'bold', color: '#555' },
-  input: { padding: '8px 12px', borderRadius: '8px', border: '1px solid #ccc', fontSize: '14px' },
-  dica: { fontSize: '11px', color: '#999', fontStyle: 'italic' },
-  toggle: { display: 'flex', borderRadius: '6px', overflow: 'hidden', border: '1px solid #8B0000', marginBottom: '6px', width: 'fit-content' },
-  toggleBtn: { padding: '5px 14px', border: 'none', backgroundColor: '#fff', color: '#8B0000', cursor: 'pointer', fontSize: '12px' },
+  painel: {
+    backgroundColor: '#fff', borderRadius: 14, padding: '24px 28px',
+    marginBottom: 24, border: '1px solid #f0f0f0',
+    boxShadow: '0 2px 12px rgba(0,0,0,0.04)'
+  },
+  painelHeader: { display: 'flex', alignItems: 'center', gap: 8, marginBottom: 20 },
+  painelIcon: { fontSize: 16 },
+  painelTitulo: { fontSize: 14, fontWeight: 600, color: '#1a1a1a' },
+  grid: { display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 16, marginBottom: 20 },
+  campo: { display: 'flex', flexDirection: 'column', gap: 6 },
+  label: { fontSize: 11, fontWeight: 600, color: '#888', textTransform: 'uppercase', letterSpacing: 0.5 },
+  input: {
+    padding: '9px 12px', borderRadius: 8,
+    border: '1.5px solid #e8e8e8', fontSize: 13,
+    outline: 'none', transition: 'border-color 0.15s',
+    fontFamily: '"Inter", "Segoe UI", Arial, sans-serif'
+  },
+  dica: { fontSize: 10, color: '#bbb', fontStyle: 'italic' },
+  toggle: {
+    display: 'flex', borderRadius: 8, overflow: 'hidden',
+    border: '1.5px solid #e8e8e8', marginBottom: 8, width: 'fit-content'
+  },
+  toggleBtn: {
+    padding: '6px 14px', border: 'none',
+    backgroundColor: '#fff', color: '#666',
+    cursor: 'pointer', fontSize: 12, fontWeight: 500
+  },
   toggleAtivo: { backgroundColor: '#8B0000', color: '#fff' },
-  faixa: { display: 'flex', alignItems: 'center', gap: '8px' },
-  inputFaixa: { padding: '8px 10px', borderRadius: '8px', border: '1px solid #ccc', fontSize: '13px', width: '100%' },
-  ate: { fontSize: '12px', color: '#888', whiteSpace: 'nowrap' },
-  acoes: { display: 'flex', gap: '10px' },
-  botao: { padding: '10px 28px', backgroundColor: '#8B0000', color: '#fff', border: 'none', borderRadius: '8px', cursor: 'pointer', fontSize: '14px' },
-  botaoLimpar: { padding: '10px 20px', backgroundColor: '#fff', color: '#8B0000', border: '1px solid #8B0000', borderRadius: '8px', cursor: 'pointer', fontSize: '14px' },
-  contador: { color: '#666', fontSize: '13px', marginBottom: '10px' },
-  vazio: { color: '#888', textAlign: 'center', marginTop: '40px' },
-  tabela: { width: '100%', borderCollapse: 'collapse', backgroundColor: '#fff', borderRadius: '10px', overflow: 'hidden', boxShadow: '0 2px 8px rgba(0,0,0,0.08)' },
-  th: { backgroundColor: '#8B0000', color: '#fff', padding: '12px 16px', textAlign: 'left', fontSize: '13px' },
-  tr: { borderBottom: '1px solid #eee' },
-  td: { padding: '10px 16px', fontSize: '13px', color: '#333' },
-  editBtn: { backgroundColor: '#8B0000', color: '#fff', border: 'none', borderRadius: '6px', padding: '4px 10px', cursor: 'pointer', fontSize: '12px' }
+  faixa: { display: 'flex', alignItems: 'center', gap: 8 },
+  inputFaixa: {
+    padding: '9px 12px', borderRadius: 8,
+    border: '1.5px solid #e8e8e8', fontSize: 13, width: '100%',
+    fontFamily: '"Inter", "Segoe UI", Arial, sans-serif'
+  },
+  ate: { fontSize: 12, color: '#aaa', whiteSpace: 'nowrap' },
+  acoes: { display: 'flex', gap: 10 },
+  botao: {
+    padding: '10px 24px', backgroundColor: '#8B0000', color: '#fff',
+    border: 'none', borderRadius: 8, cursor: 'pointer',
+    fontSize: 13, fontWeight: 600
+  },
+  botaoLimpar: {
+    padding: '10px 20px', backgroundColor: '#fff', color: '#666',
+    border: '1.5px solid #e8e8e8', borderRadius: 8,
+    cursor: 'pointer', fontSize: 13
+  },
+  empty: { textAlign: 'center', padding: '60px 0' },
+  emptyIcon: { fontSize: 40, marginBottom: 12 },
+  emptyTitle: { fontSize: 16, fontWeight: 600, color: '#333', marginBottom: 4 },
+  emptyDesc: { fontSize: 13, color: '#999' },
+  tabelaWrap: {
+    backgroundColor: '#fff', borderRadius: 14,
+    border: '1px solid #f0f0f0', overflow: 'hidden',
+    boxShadow: '0 2px 12px rgba(0,0,0,0.04)'
+  },
+  tabelaHeader: {
+    display: 'flex', justifyContent: 'space-between', alignItems: 'center',
+    padding: '16px 20px', borderBottom: '1px solid #f0f0f0'
+  },
+  contador: { fontSize: 13, color: '#888' },
+  btnNovo: {
+    padding: '7px 16px', backgroundColor: '#8B0000', color: '#fff',
+    border: 'none', borderRadius: 8, cursor: 'pointer', fontSize: 12, fontWeight: 600
+  },
+  tabela: { width: '100%', borderCollapse: 'collapse' },
+  th: {
+    padding: '12px 16px', textAlign: 'left',
+    fontSize: 11, fontWeight: 600, color: '#888',
+    textTransform: 'uppercase', letterSpacing: 0.5,
+    borderBottom: '1px solid #f0f0f0', backgroundColor: '#fafafa'
+  },
+  tr: { borderBottom: '1px solid #f5f5f5', transition: 'background 0.1s' },
+  td: { padding: '12px 16px', fontSize: 13, color: '#444' },
+  badge: {
+    backgroundColor: '#f5f5f5', color: '#555',
+    padding: '3px 10px', borderRadius: 20, fontSize: 12
+  },
+  qtdBadge: {
+    padding: '3px 12px', borderRadius: 20,
+    fontSize: 12, fontWeight: 600, display: 'inline-block'
+  },
+  editBtn: {
+    padding: '5px 14px', backgroundColor: '#fff',
+    border: '1.5px solid #8B0000', color: '#8B0000',
+    borderRadius: 6, cursor: 'pointer', fontSize: 12, fontWeight: 600
+  },
 };
-
+ 
 export default Estoque;
